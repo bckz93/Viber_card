@@ -1,11 +1,11 @@
 [package]
-name = "devcards"
+name = "vibercard"
 version = "0.1.0"
-description = "DevCards - gamified stat cards from your local Claude Code / Ollama history"
+description = "ViberCard - gamified stat cards from your local Claude Code / Ollama history"
 edition = "2021"
 
 [lib]
-name = "devcards_lib"
+name = "vibercard_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

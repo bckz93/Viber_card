@@ -1,4 +1,4 @@
-# DevCards
+# ViberCard
 
 A local-first desktop app that scans your **Claude Code**, **Ollama**, and **Hermes**
 history and turns your prompting habits into a humorous, FUT/Pokémon-style stat
@@ -61,7 +61,7 @@ npm run tauri build
 src-tauri/   Rust backend — scanning, scoring, local persistence
   src/scanner/     one module per data source (all implement HistorySource)
   src/scoring.rs   Interaction[] -> PlayerStats (the 5 stats + archetype)
-  src/snapshot.rs  daily JSONL history (~/.local/share/devcards/snapshots.jsonl)
+  src/snapshot.rs  daily JSONL history (~/.local/share/vibercard/snapshots.jsonl)
   src/commands.rs  the Tauri commands the frontend calls
 
 src/         React frontend

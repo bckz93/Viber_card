@@ -26,7 +26,7 @@ export function ExportCardButton({
 
       const slug = filenameHint.toLowerCase().replace(/[^a-z0-9]+/g, '-')
       const path = await save({
-        defaultPath: `devcards-${slug}.png`,
+        defaultPath: `vibercard-${slug}.png`,
         filters: [{ name: 'PNG Image', extensions: ['png'] }],
       })
       if (!path) {

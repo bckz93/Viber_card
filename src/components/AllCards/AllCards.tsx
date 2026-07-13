@@ -11,7 +11,7 @@ export function AllCards({ githubUsername }: { githubUsername: string }) {
   return (
     <div>
       <p className="text-xs text-white/40 mb-6 max-w-2xl">
-        Every class DevCards can hand out, with example stats that land squarely inside its zone
+        Every class ViberCard can hand out, with example stats that land squarely inside its zone
         (see <span className="font-mono">archetypeRules.ts</span> — mirrors
         <span className="font-mono"> scoring.rs::archetype_for</span>). Not your data — just what
         it takes to get each one.

@@ -1,8 +1,8 @@
-# Contribuer à DevCards
+# Contribuer à ViberCard
 
 *[Read this in English](./CONTRIBUTING.md)*
 
-DevCards est pensé pour être forké et étendu — nouvelles sources de données,
+ViberCard est pensé pour être forké et étendu — nouvelles sources de données,
 nouveaux archétypes. Ce document explique l'architecture et détaille les
 fichiers exacts à toucher pour les changements les plus courants.
 
@@ -279,7 +279,7 @@ ajoutée a l'air cassée, pas absente.
 ## Persistance
 
 Tout est en JSON simple sous le dossier de données de l'OS
-(`dirs::data_dir()` — `~/.local/share/devcards/` sous Linux, l'équivalent
+(`dirs::data_dir()` — `~/.local/share/vibercard/` sous Linux, l'équivalent
 sur les autres plateformes) :
 
 - **`snapshots.jsonl`** — une ligne `{ taken_at, stats }` ajoutée par jour
@@ -288,7 +288,7 @@ sur les autres plateformes) :
   **pas** ce qu'Evolution Progress lit (voir plus haut).
 
 Pas de SQLite, pas de base de données externe pour les données propres de
-DevCards — garde ça ainsi sauf raison sérieuse. Le principe : un utilisateur
+ViberCard — garde ça ainsi sauf raison sérieuse. Le principe : un utilisateur
 doit pouvoir faire `cat`, inspecter, ou sauvegarder ses propres données sans
 aucun outil.
 

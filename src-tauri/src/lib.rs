@@ -15,5 +15,5 @@ pub fn run() {
             commands::get_stats_for_range
         ])
         .run(tauri::generate_context!())
-        .expect("error while running DevCards");
+        .expect("error while running ViberCard");
 }

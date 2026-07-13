@@ -10,7 +10,7 @@ import { AllCards } from './components/AllCards/AllCards'
 
 function App() {
   const [githubUsername, setGithubUsername] = useState(
-    () => localStorage.getItem('devcards.githubUsername') ?? '',
+    () => localStorage.getItem('vibercard.githubUsername') ?? '',
   )
   const [stats, setStats] = useState<PlayerStats | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -19,7 +19,7 @@ function App() {
   const cardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    localStorage.setItem('devcards.githubUsername', githubUsername)
+    localStorage.setItem('vibercard.githubUsername', githubUsername)
   }, [githubUsername])
 
   function runScan() {
@@ -46,7 +46,7 @@ function App() {
       <header className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="w-7 h-7 rounded-md" />
-          <h1 className="text-2xl font-black tracking-tight text-white">DevCards</h1>
+          <h1 className="text-2xl font-black tracking-tight text-white">ViberCard</h1>
         </div>
         <input
           value={githubUsername}

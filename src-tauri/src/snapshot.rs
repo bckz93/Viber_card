@@ -18,9 +18,9 @@ pub struct Snapshot {
     pub stats: PlayerStats,
 }
 
-/// `~/.local/share/devcards/snapshots.jsonl` (or the OS equivalent).
+/// `~/.local/share/vibercard/snapshots.jsonl` (or the OS equivalent).
 pub fn snapshots_path() -> Option<PathBuf> {
-    dirs::data_dir().map(|d| d.join("devcards").join("snapshots.jsonl"))
+    dirs::data_dir().map(|d| d.join("vibercard").join("snapshots.jsonl"))
 }
 
 pub fn append_snapshot(path: &Path, stats: &PlayerStats) -> std::io::Result<()> {
@@ -106,7 +106,7 @@ mod tests {
     }
 
     fn scratch_path(name: &str) -> PathBuf {
-        std::env::temp_dir().join(format!("devcards-test-{name}-{}.jsonl", std::process::id()))
+        std::env::temp_dir().join(format!("vibercard-test-{name}-{}.jsonl", std::process::id()))
     }
 
     #[test]

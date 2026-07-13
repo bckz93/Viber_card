@@ -3,12 +3,12 @@
 //! without needing the full Tauri app running.
 //! Run with: cargo run --example inspect
 
-use devcards_lib::models::{Role, ScanResult, Source};
-use devcards_lib::scanner::claude_code::ClaudeCodeSource;
-use devcards_lib::scanner::hermes::HermesSource;
-use devcards_lib::scanner::ollama::OllamaSource;
-use devcards_lib::scanner::HistorySource;
-use devcards_lib::scoring;
+use vibercard_lib::models::{Role, ScanResult, Source};
+use vibercard_lib::scanner::claude_code::ClaudeCodeSource;
+use vibercard_lib::scanner::hermes::HermesSource;
+use vibercard_lib::scanner::ollama::OllamaSource;
+use vibercard_lib::scanner::HistorySource;
+use vibercard_lib::scoring;
 use std::collections::HashSet;
 
 fn main() {
@@ -112,9 +112,9 @@ fn main() {
         stats.emo
     );
 
-    if let Some(path) = devcards_lib::snapshot::snapshots_path() {
-        let saved = devcards_lib::snapshot::snapshot_if_new_day(&path, &stats).unwrap_or(false);
-        let history = devcards_lib::snapshot::load_snapshots(&path).unwrap_or_default();
+    if let Some(path) = vibercard_lib::snapshot::snapshots_path() {
+        let saved = vibercard_lib::snapshot::snapshot_if_new_day(&path, &stats).unwrap_or(false);
+        let history = vibercard_lib::snapshot::load_snapshots(&path).unwrap_or_default();
         println!(
             "\nsnapshot: {} (file: {}, {} total)",
             if saved { "saved (new day)" } else { "already have one for today" },
