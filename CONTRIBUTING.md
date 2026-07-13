@@ -1,5 +1,7 @@
 # Contributing to DevCards
 
+*[Lire en français](./CONTRIBUTING.fr.md)*
+
 DevCards is meant to be forked and extended — new data sources, new
 archetypes. This doc explains the architecture and walks through the exact
 files to touch for the most common changes.
@@ -28,12 +30,18 @@ src/        React + TypeScript frontend
     RadarChart.tsx        single-series radar (used on the card)
     ArchetypeRules.tsx    the "Class Rules" panel — human-readable mirror
                           of scoring.rs::archetype_for
+    archetypeRules.ts     the actual data (blurb, condition, example stats)
+                          behind ArchetypeRules.tsx and AllCards — single
+                          source of truth for both
     StatsRecap.tsx        punchline + per-stat explanation list
     archetypeArt.ts       archetype -> illustration
     archetypeLore.ts      archetype -> flavor text
     cardTheme.ts          archetype -> {gradient, accent, shineOpacity}
     statMeta.ts           the 5 stats' {key, label, icon} — single source
                           of truth, reused everywhere
+  components/AllCards/
+    AllCards.tsx           gallery of every archetype, rendered from
+                          archetypeRules.ts's example stats — not real scans
   components/EvolutionProgress/
     EvolutionProgress.tsx     picks the comparison snapshot, renders deltas
     EvolutionRadarChart.tsx   two-series (Then/Now) radar
@@ -114,11 +122,23 @@ average would wash out.
 
 | Stat | What it measures | How |
 |---|---|---|
-| **VOL** | Volume / context size | Average words per message, scaled so ~150 words/msg averages out to ~99. |
+| **VOL** | Volume / context size | Average *prose* words per message (see below), scaled so ~150 words/msg averages out to ~99. |
 | **SPD** | Pace of requests | Median seconds between consecutive messages in the same session; ≤15s ≈ 99, ≥10min ≈ 0. |
 | **NCT** | Nocturnal activity | % of messages sent outside 6am–10pm (UTC — not yet timezone-aware, see Known limitations). |
-| **SLF** | Self-reliance / autonomy | Blend of prompt length and hit-rate against a fixed list of "complex engineering" keywords (`refactor`, `architecture`, `test`, `async`, …). |
+| **SLF** | Self-reliance / autonomy | Blend of prose length and hit-rate against a fixed list of "complex engineering" keywords (`refactor`, `architecture`, `test`, `async`, …). |
 | **EMO** | Frustration/panic | % of messages matching a frustration keyword list, containing `"!!"`, or mostly uppercase ("shouting"). |
+
+VOL and SLF both count *prose* words, not raw words — `prose_word_count()`
+strips ``` fenced content and any individual token that's long (>24 chars)
+or majority-non-letters (`is_prose_token()`), so pasted code/logs/stack
+traces don't inflate either stat just because they're wordy. This matters
+most with a small sample size: a couple of pasted stack traces across ~80
+prompts used to be able to single-handedly max out VOL and SLF even though
+the user barely wrote any prose themselves.
+
+`total_tokens` (sum of `content.len() / 4` over every interaction, both
+roles, in the window) isn't one of the 5 core stats, but it does gate one
+archetype — see below.
 
 All thresholds are **deliberate judgment calls for a humorous stat card**,
 not a rigorous productivity metric — say so in your PR description if you're
@@ -157,30 +177,71 @@ record for that scenario, just not the one Evolution Progress reads today.
 
 ## How the archetype ("class") is decided
 
-`archetype_for()` in `scoring.rs` is a priority-ordered list of
-`(condition, name)` rules — first match wins, with a `"Balanced Vibe Coder"`
-fallback. **Every rule requires at least two stats to agree.** This is a
-hard convention, not a style preference: a single extreme stat is never
-enough to justify a class (e.g. high NCT alone can't tell a calm night owl
-from someone panicking at 3am — EMO is what disambiguates the two, hence
-`Nocturnal Warrior` vs `Nocturnal Panic Coder`).
+`archetype_for()` in `scoring.rs` is **tiered and mutually exclusive, not a
+priority list.** Each tier's condition already excludes everything claimed
+by the tiers above it, so exactly one archetype can ever match a given stat
+tuple — which archetype "wins" is never an accident of ordering. This
+replaced an earlier flat list of independent `(condition, name)` rules that
+*looked* like a priority list but actually had silently overlapping
+conditions: `Token Exterminator` (`SLF>80 && VOL>80`) and `Self-Reliant
+Sage` (`SLF>80 && EMO<=30`) both matched whenever VOL and EMO were in range
+at once, and because Exterminator came first in the list, Sage was
+unreachable for anyone verbose — a real bug, not a hypothetical one. If
+you're adding a rule, preserve mutual exclusivity; don't go back to a flat
+list.
+
+The tiers, in order:
+
+1. **Time-of-day** (NCT) — `NCT > 60` → `Nocturnal Panic Coder` (EMO > 50)
+   or `Nocturnal Warrior` (EMO ≤ 50). A single extreme stat (NCT) is never
+   enough on its own; EMO disambiguates a calm night owl from someone
+   panicking at 3am.
+2. **Frustration**, for non-nocturnal profiles — `EMO > 60` →
+   `Emo-Driven Coder`.
+3. **Autonomy-vs-verbosity quadrant** (SLF × VOL), for calm/non-nocturnal
+   profiles:
+   - `SLF > 80 && VOL > 80` → `Token Exterminator`, but *only* if
+     `total_tokens > TOKEN_EXTERMINATOR_THRESHOLD` (200,000) — the
+     archetype is named after tokens, so being verbose and autonomous isn't
+     enough on its own. Below that bar, it resolves to whichever of SLF/VOL
+     is more pronounced (`Self-Reliant Sage` or `The Novelist`) instead of
+     falling through to a later tier — two maxed-out stats must never end
+     up "Balanced".
+   - `SLF > 80 && VOL ≤ 80` → `Self-Reliant Sage`.
+   - `VOL > 80 && SLF ≤ 80` → `The Novelist`.
+4. **Pace**, only for the quadrant's remaining cell (`SLF ≤ 80 && VOL ≤
+   80`) — `SPD > 80` → `Spam Cannon` (VOL < 40) or `Rapid-Fire Debugger`
+   (VOL ≥ 40).
+5. **Fallback** — `Balanced Vibe Coder`, reached only once VOL, SLF, SPD,
+   NCT and EMO are *all* below their "extreme" thresholds. If you add a
+   condition that can be true here while some stat is still maxed out,
+   you've reintroduced the "everything falls through to Balanced" bug.
 
 ## Adding a new archetype
 
-Adding, say, `"Weekend Warrior"` touches these files, all keyed by the exact
-same string:
+There's no single flat list to append to anymore — you have to decide
+which tier your archetype belongs in, and make sure its condition doesn't
+overlap with an existing one in that tier (or, if it must, that the overlap
+is resolved explicitly rather than by accidental ordering — see above).
+Once you know where it goes, these files are all keyed by the exact same
+string:
 
-1. **`src-tauri/src/scoring.rs`**, `archetype_for()` — add a
-   `(condition, "Weekend Warrior")` entry in priority order (two-stat
-   minimum, see above).
+1. **`src-tauri/src/scoring.rs`**, `archetype_for()` — add the branch in the
+   right tier.
 2. **Same file**, `punchline_for()` — add a one-line joke for the match arm.
 3. **Same file**, the `#[cfg(test)] mod tests` block — add a case asserting
-   the new combo actually resolves to your new archetype.
-4. **`src/components/CurrentDeck/ArchetypeRules.tsx`**, `RULES` — the same
-   condition, written as human-readable text (e.g. `"NCT > 60 and EMO ≤
-   50"`). There's no shared source of truth between Rust and this list; a
-   comment at the top of the file exists specifically to remind you to keep
-   them in sync.
+   the new combo resolves to your new archetype, *and* a case asserting a
+   neighboring combo still resolves to whatever it resolved to before (the
+   regression shape that caught the Sage/Exterminator bug).
+4. **`src/components/CurrentDeck/archetypeRules.ts`**, `ARCHETYPE_RULES` —
+   the same condition, written as human-readable text (e.g. `"NCT > 60 and
+   EMO ≤ 50"`), including whatever it excludes from the tiers above it, plus
+   `exampleStats` sitting comfortably inside the new archetype's region (not
+   on a threshold boundary). This one list feeds both the "Class Rules"
+   panel (`ArchetypeRules.tsx`) and the "All Cards" gallery (`AllCards.tsx`)
+   — there's no shared source of truth between Rust and this file, though; a
+   comment at its top exists specifically to remind you to keep them in
+   sync.
 5. **`src/components/CurrentDeck/archetypeLore.ts`**, `ARCHETYPE_LORE` — one
    short, Pokédex-style flavor sentence.
 6. **`src/components/CurrentDeck/cardTheme.ts`**, `ARCHETYPE_THEME` — a
@@ -249,6 +310,14 @@ one place.
 - **Ollama has no per-message timestamps** — its contribution to NCT/SPD is
   a documented approximation (file mtime). If Ollama ever ships a richer
   history format, `scanner/ollama.rs` is the only file that needs to change.
+- **`is_prose_token()` is a cheap heuristic, not real language detection** —
+  it catches pasted content by token length/letter-ratio (dotted Java-style
+  stack traces, file paths with a line number, hex hashes), but a short,
+  letter-heavy paste (a Python traceback's `File "..."` line, for example)
+  can still slip through and count toward VOL/SLF. A smarter classifier
+  (e.g. line-level heuristics instead of per-token) is a welcome PR, as long
+  as it stays a fast, dependency-free heuristic — no NLP libraries for a
+  humorous stat card.
 
 ## Pull requests
 

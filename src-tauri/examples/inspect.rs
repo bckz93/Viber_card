@@ -14,7 +14,7 @@ use std::collections::HashSet;
 fn main() {
     let mut result = ScanResult::default();
 
-    if let Some(root) = ClaudeCodeSource::default_root().ok() {
+    if let Ok(root) = ClaudeCodeSource::default_root() {
         println!("Scanning Claude Code: {}", root.display());
         match ClaudeCodeSource::new(root).scan() {
             Ok(r) => result = result.merge(r),

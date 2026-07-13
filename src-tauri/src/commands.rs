@@ -63,7 +63,7 @@ fn start_of_week(dt: DateTime<Utc>) -> DateTime<Utc> {
     let days_from_monday = dt.weekday().num_days_from_monday() as i64;
     (dt - Duration::days(days_from_monday))
         .date_naive()
-        .and_hms_opt(0, 0, 0)
+        .and_hms_opt(0, 0, 0) // 00:00:00 is always a valid time, so this is never None
         .unwrap()
         .and_utc()
 }

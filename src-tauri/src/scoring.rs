@@ -224,6 +224,7 @@ fn score_spd(msgs: &[&Interaction]) -> u8 {
         return 50; // not enough data to judge rhythm - neutral score
     }
 
+    // unwrap: deltas are always finite (cast from integer seconds), never NaN
     deltas.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let median = deltas[deltas.len() / 2];
 

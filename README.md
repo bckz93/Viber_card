@@ -73,8 +73,9 @@ src/         React frontend
 ## Contributing
 
 Adding a new history source or a new archetype/class are both intentionally
-scoped, well-defined changes — see [CONTRIBUTING.md](./CONTRIBUTING.md) for
-exactly which files to touch and why.
+scoped, well-defined changes — see [CONTRIBUTING.md](./CONTRIBUTING.md)
+(also available [in French](./CONTRIBUTING.fr.md)) for exactly which files
+to touch and why.
 
 ## License
 

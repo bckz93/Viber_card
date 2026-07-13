@@ -36,7 +36,7 @@ impl HistorySource for HermesSource {
         )
         .map_err(|e| ScanError::Io {
             path: self.db_path.display().to_string(),
-            source: std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+            source: std::io::Error::other(e.to_string()),
         })?;
 
         let mut stmt = conn
@@ -47,7 +47,7 @@ impl HistorySource for HermesSource {
             )
             .map_err(|e| ScanError::Io {
                 path: self.db_path.display().to_string(),
-                source: std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+                source: std::io::Error::other(e.to_string()),
             })?;
 
         let mut interactions = Vec::new();
@@ -63,7 +63,7 @@ impl HistorySource for HermesSource {
             })
             .map_err(|e| ScanError::Io {
                 path: self.db_path.display().to_string(),
-                source: std::io::Error::new(std::io::ErrorKind::Other, e.to_string()),
+                source: std::io::Error::other(e.to_string()),
             })?;
 
         for row in rows {
