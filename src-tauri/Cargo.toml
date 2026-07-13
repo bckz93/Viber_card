@@ -1,0 +1,27 @@
+[package]
+name = "devcards"
+version = "0.1.0"
+description = "DevCards - gamified stat cards from your local Claude Code / Ollama history"
+edition = "2021"
+
+[lib]
+name = "devcards_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5"
+walkdir = "2"
+thiserror = "1"
+rusqlite = { version = "0.31", features = ["bundled"] }
+tauri-plugin-dialog = "2"
+base64 = "0.22"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
