@@ -1,7 +1,5 @@
 # Contributing to ViberCard
 
-*[Lire en français](./CONTRIBUTING.fr.md)*
-
 ViberCard is meant to be forked and extended — new data sources, new
 archetypes. This doc explains the architecture and walks through the exact
 files to touch for the most common changes.
