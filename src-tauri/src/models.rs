@@ -8,6 +8,7 @@ pub enum Source {
     ClaudeCode,
     Ollama,
     Hermes,
+    Codex,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -18,8 +19,8 @@ pub enum Role {
 }
 
 /// A single normalized message, regardless of which tool produced it.
-/// Every scanner (Claude Code, Ollama, Hermes) must be able to produce
-/// a `Vec<Interaction>` — this is the common contract the scoring
+/// Every scanner (Claude Code, Codex, Ollama, Hermes) must be able to
+/// produce a `Vec<Interaction>` — this is the common contract the scoring
 /// engine (VOL/SPD/NCT/SLF/EMO) is built on top of.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Interaction {
@@ -64,9 +65,9 @@ pub struct ScanResult {
 }
 
 impl ScanResult {
-    /// Combines results from multiple sources (Claude Code + Hermes + Ollama)
-    /// into one. A source that fails entirely contributes only a warning,
-    /// not a hard error — the other sources still count.
+    /// Combines results from multiple sources (Claude Code + Codex + Hermes +
+    /// Ollama) into one. A source that fails entirely contributes only a
+    /// warning, not a hard error — the other sources still count.
     pub fn merge(mut self, other: ScanResult) -> Self {
         self.interactions.extend(other.interactions);
         self.warnings.extend(other.warnings);

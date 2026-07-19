@@ -7,20 +7,70 @@ use chrono::{DateTime, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Covers English plus the 5 most-spoken languages worldwide by total
+/// speakers (Mandarin, Hindi, Spanish, French, Arabic), so EMO/SLF aren't
+/// systematically blind to non-English/French users. `content.contains()`
+/// works on Unicode substrings regardless of script, so Mandarin/Hindi/
+/// Arabic entries need no special handling elsewhere. This is a best-effort
+/// pass, not verified by native speakers of every language listed here —
+/// corrections and additional languages are welcome (see CONTRIBUTING.md).
+/// Hindi programming discourse very commonly code-switches to English
+/// technical nouns ("refactor karo", "test likho"), so COMPLEXITY_KEYWORDS
+/// below only adds Devanagari terms that are genuinely idiomatic in
+/// practice, rather than forcing translations nobody actually types.
 const FRUSTRATION_KEYWORDS: &[&str] = &[
+    // English
+    "doesn't work",
+    "does not work",
+    "still doesn't work",
+    "not working",
+    "this is broken",
+    "why does this",
+    "why is this",
+    "makes no sense",
+    "same issue",
+    "error",
+    // French
     "marche pas",
     "marche toujours pas",
     "ça bug",
     "ca bug",
-    "erreur",
-    "error",
     "pourquoi ça",
     "pourquoi ca",
     "n'importe quoi",
     "toujours pareil",
+    "erreur",
+    // Spanish
+    "no funciona",
+    "sigue sin funcionar",
+    "no anda",
+    "por qué no funciona",
+    "no tiene sentido",
+    "otra vez lo mismo",
+    // Mandarin Chinese (simplified)
+    "不行",
+    "还是不行",
+    "有问题",
+    "为什么不行",
+    "又出错",
+    "报错",
+    // Hindi
+    "काम नहीं कर रहा",
+    "फिर से गलती",
+    "समझ नहीं आ रहा",
+    "यह गलत है",
+    // Arabic
+    "لا يعمل",
+    "ما زال لا يعمل",
+    "لماذا لا يعمل",
+    "لا يوجد معنى",
+    "نفس المشكلة",
+    "خطأ",
 ];
 
 const COMPLEXITY_KEYWORDS: &[&str] = &[
+    // English / French shared stems (optimis matches optimise/optimize/
+    // optimisation/optimization; securi matches security/secure/sécurité)
     "refactor",
     "architecture",
     "optimis",
@@ -31,8 +81,47 @@ const COMPLEXITY_KEYWORDS: &[&str] = &[
     "scalab",
     "performance",
     "concurrence",
+    "concurrency",
     "async",
     "migration",
+    // French
+    "refonte",
+    // Spanish
+    "arquitectura",
+    "optimiz",
+    "prueba",
+    "diseño",
+    "escalab",
+    "rendimiento",
+    "concurrencia",
+    "asíncrono",
+    "migración",
+    // Mandarin Chinese (simplified)
+    "重构",
+    "架构",
+    "优化",
+    "安全",
+    "测试",
+    "设计",
+    "可扩展",
+    "性能",
+    "并发",
+    "异步",
+    "迁移",
+    // Hindi (only terms actually used in practice — see doc comment above)
+    "सुरक्षा",
+    "प्रदर्शन",
+    // Arabic
+    "إعادة الهيكلة",
+    "معمارية",
+    "تحسين",
+    "أمان",
+    "اختبار",
+    "تصميم",
+    "قابلية التوسع",
+    "أداء",
+    "تزامن",
+    "ترحيل",
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -452,6 +541,37 @@ mod tests {
         )];
         let stats = test_compute(&msgs);
         assert_eq!(stats.emo, 0);
+    }
+
+    // Regression: EMO/SLF must not be English/French-only — a few spot
+    // checks across the other supported languages (not exhaustive).
+    #[test]
+    fn frustration_keywords_detected_in_non_english_french_languages() {
+        let cases = [
+            ("no funciona, sigue sin funcionar", "Spanish"),
+            ("还是不行，为什么不行", "Mandarin"),
+            ("यह गलत है, फिर से गलती", "Hindi"),
+            ("لا يعمل، لماذا لا يعمل", "Arabic"),
+        ];
+        for (text, lang) in cases {
+            let msgs = vec![user_msg(text, "2026-07-01T10:00:00Z")];
+            let stats = test_compute(&msgs);
+            assert!(stats.emo > 50, "expected high EMO for {lang}, got {}", stats.emo);
+        }
+    }
+
+    #[test]
+    fn complexity_keywords_detected_in_non_english_french_languages() {
+        let cases = [
+            ("necesito optimizar la arquitectura y añadir pruebas", "Spanish"),
+            ("需要重构架构并添加测试", "Mandarin"),
+            ("ترحيل قاعدة البيانات وتحسين الأداء وإضافة اختبار", "Arabic"),
+        ];
+        for (text, lang) in cases {
+            let msgs = vec![user_msg(text, "2026-07-01T10:00:00Z")];
+            let stats = test_compute(&msgs);
+            assert!(stats.slf > 0, "expected complexity signal for {lang}, got SLF {}", stats.slf);
+        }
     }
 
     // Regression: archetype_for used to be a flat priority list where Token

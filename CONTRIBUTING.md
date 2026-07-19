@@ -10,6 +10,7 @@ files to touch for the most common changes.
 src-tauri/  Rust, Tauri v2 backend
   src/scanner/        one module per data source, each implements HistorySource
     claude_code.rs
+    codex.rs
     hermes.rs
     ollama.rs
     mod.rs            the HistorySource trait + ScanError
@@ -89,12 +90,13 @@ that keeps a local chat log.
 2. Add `Source::MyTool` to the enum in `models.rs`.
 3. Register `pub mod my_tool;` in `scanner/mod.rs`.
 4. Wire it into `run_scan()` in `commands.rs`, following the exact pattern
-   already used for Claude Code / Hermes / Ollama: on failure push a
+   already used for Claude Code / Codex / Hermes / Ollama: on failure push a
    `warnings` entry and move on, never `?`-propagate a hard error out of
    `run_scan()` — one broken source must not blank the whole card.
-5. Add a unit test with a couple of fixture `Interaction`s (see the bottom
-   of `hermes.rs` or `snapshot.rs` for the pattern: a scratch temp file,
-   assert on the parsed result, clean up after).
+5. Add a unit test with a couple of fixture `Interaction`s — `codex.rs`'s
+   `#[cfg(test)] mod tests` is the reference for a pure, filesystem-free
+   `parse_line()` you can feed fixture JSON strings directly; `snapshot.rs`
+   is the reference for the scratch-temp-file pattern instead.
 
 **Constraints your scanner must respect**, because the scoring engine
 depends on them:
@@ -106,9 +108,10 @@ depends on them:
   file's mtime for every line as a documented, admitted approximation.
 - Map roles to `Role::User` / `Role::Assistant` only; drop everything else
   (tool calls, system messages). If your source injects boilerplate/system
-  text under the `user` role (Hermes does this for cron/skill triggers),
-  filter it out — see the `[IMPORTANT:` check in `hermes.rs` for the
-  pattern. Otherwise it inflates VOL/EMO with text the human never typed.
+  text under the `user` role, filter it out — see the `[IMPORTANT:` check
+  in `hermes.rs` (cron/skill triggers) or the `INJECTED_PREFIXES` check in
+  `codex.rs` (`<environment_context>`, `AGENTS.md`) for the pattern.
+  Otherwise it inflates VOL/EMO with text the human never typed.
 
 ## How the 5 stats are computed
 
@@ -299,15 +302,27 @@ one place.
   timezone may get scored as if they work business hours. Converting to
   local time in `score_nct` (and in the frontend's explanation text) would
   be a solid, scoped PR.
-- **Frustration/complexity keyword lists are mixed French/English** and
-  fairly small (`FRUSTRATION_KEYWORDS`, `COMPLEXITY_KEYWORDS` in
-  `scoring.rs`). An English-only or non-French/English speaker's real
-  frustration may go undetected. Expanding or internationalizing these
-  lists is welcome — keep them as plain `&[&str]` constants, no need for a
-  config file for this.
+- **Frustration/complexity keyword lists (`FRUSTRATION_KEYWORDS`,
+  `COMPLEXITY_KEYWORDS` in `scoring.rs`) cover English plus the 5
+  most-spoken languages worldwide** (Mandarin, Hindi, Spanish, French,
+  Arabic), but it's a best-effort pass, not verified by native speakers of
+  every language listed. A speaker of any of these who spots an unnatural
+  or missing phrase — or a speaker of a language not covered at all — is
+  very welcome to fix/extend it. Keep entries as plain `&[&str]` constants,
+  no need for a config file for this.
 - **Ollama has no per-message timestamps** — its contribution to NCT/SPD is
   a documented approximation (file mtime). If Ollama ever ships a richer
   history format, `scanner/ollama.rs` is the only file that needs to change.
+- **Codex sessions that Codex itself has archived/compressed
+  (`rollout-*.jsonl.zst`) aren't read** — only plain `.jsonl` files, which
+  covers recent/active sessions.
+  Decompressing zstd would mean adding a new dependency for archived history
+  only; a welcome PR if someone wants that coverage.
+- **Codex's injected-boilerplate filter (`INJECTED_PREFIXES` in `codex.rs`)
+  only catches the two patterns confirmed at the time it was written**
+  (`<environment_context>`, `AGENTS.md` instructions). If Codex CLI adds
+  another synthetic `role: "user"` message type, it'll count toward VOL/EMO
+  until someone adds its prefix to the list.
 - **`is_prose_token()` is a cheap heuristic, not real language detection** —
   it catches pasted content by token length/letter-ratio (dotted Java-style
   stack traces, file paths with a line number, hex hashes), but a short,

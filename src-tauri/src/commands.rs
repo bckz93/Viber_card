@@ -1,5 +1,6 @@
 use crate::models::ScanResult;
 use crate::scanner::claude_code::ClaudeCodeSource;
+use crate::scanner::codex::CodexSource;
 use crate::scanner::hermes::HermesSource;
 use crate::scanner::ollama::OllamaSource;
 use crate::scanner::HistorySource;
@@ -30,6 +31,14 @@ fn run_scan() -> ScanResult {
             Ok(r) => result = result.merge(r),
             Err(e) => result.warnings.push(format!("Hermes: {e}")),
         }
+    }
+
+    match CodexSource::default_root() {
+        Ok(root) => match CodexSource::new(root).scan() {
+            Ok(r) => result = result.merge(r),
+            Err(e) => result.warnings.push(format!("Codex: {e}")),
+        },
+        Err(e) => result.warnings.push(format!("Codex: {e}")),
     }
 
     if let Some(path) = OllamaSource::default_path() {

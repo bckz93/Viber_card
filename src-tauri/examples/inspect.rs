@@ -1,10 +1,11 @@
 //! Quick manual test: scans every known local AI-history source on this
-//! machine (Claude Code + Hermes + Ollama) and prints a combined summary,
-//! without needing the full Tauri app running.
+//! machine (Claude Code + Hermes + Ollama + Codex) and prints a combined
+//! summary, without needing the full Tauri app running.
 //! Run with: cargo run --example inspect
 
 use vibercard_lib::models::{Role, ScanResult, Source};
 use vibercard_lib::scanner::claude_code::ClaudeCodeSource;
+use vibercard_lib::scanner::codex::CodexSource;
 use vibercard_lib::scanner::hermes::HermesSource;
 use vibercard_lib::scanner::ollama::OllamaSource;
 use vibercard_lib::scanner::HistorySource;
@@ -38,6 +39,14 @@ fn main() {
         }
     }
 
+    if let Ok(root) = CodexSource::default_root() {
+        println!("Scanning Codex: {}", root.display());
+        match CodexSource::new(root).scan() {
+            Ok(r) => result = result.merge(r),
+            Err(e) => println!("  ! {e}"),
+        }
+    }
+
     let user_msgs = result
         .interactions
         .iter()
@@ -64,7 +73,7 @@ fn main() {
 
     println!("interactions: {}", result.interactions.len());
     println!("  user: {user_msgs}, assistant: {assistant_msgs}");
-    for source in [Source::ClaudeCode, Source::Hermes, Source::Ollama] {
+    for source in [Source::ClaudeCode, Source::Hermes, Source::Ollama, Source::Codex] {
         let n = result.interactions.iter().filter(|i| i.source == source).count();
         println!("  from {source:?}: {n}");
     }

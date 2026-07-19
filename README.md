@@ -1,9 +1,9 @@
 # ViberCard
 
-A local-first desktop app that scans your **Claude Code**, **Ollama**, and **Hermes**
-history and turns your prompting habits into a humorous, FUT/Pokémon-style stat
-card — with a class ("archetype"), a radar chart, and week-over-week evolution
-tracking.
+A local-first desktop app that scans your **Claude Code**, **Codex**, **Ollama**,
+and **Hermes** history and turns your prompting habits into a humorous,
+FUT/Pokémon-style stat card — with a class ("archetype"), a radar chart, and
+week-over-week evolution tracking.
 
 Everything runs on your machine. Nothing is uploaded anywhere.
 
@@ -15,9 +15,9 @@ Everything runs on your machine. Nothing is uploaded anywhere.
 - **Evolution Progress** — compares your current 7-day window against the
   snapshot closest to a week ago, so you can actually see behavior change
   instead of a lifetime average that barely moves.
-- **Multi-source scan** — combines Claude Code, Ollama, and your Hermes agent
-  (if present) into one profile. A source that's missing or unreadable just
-  produces a warning; it never blocks the others.
+- **Multi-source scan** — combines Claude Code, Codex, Ollama, and your
+  Hermes agent (if present) into one profile. A source that's missing or
+  unreadable just produces a warning; it never blocks the others.
 
 ## Stack
 
@@ -30,10 +30,11 @@ Everything runs on your machine. Nothing is uploaded anywhere.
 | Source | Read from | Notes |
 |---|---|---|
 | Claude Code | `~/.claude/projects/**/*.jsonl` | Full timestamps, real conversation turns. |
+| Codex | `~/.codex/sessions/**/rollout-*.jsonl` | Full timestamps; injected boilerplate (`<environment_context>`, `AGENTS.md`) is filtered out. |
 | Hermes | `~/.hermes/state.db` (SQLite) | Only if the Hermes agent is installed. |
 | Ollama | `~/.ollama/history` | CLI readline history only — no timestamps or assistant replies, so it barely affects time-based stats (NCT/SPD). |
 
-Nothing is scanned outside these three local paths, and no history content
+Nothing is scanned outside these four local paths, and no history content
 ever leaves the machine. The only network request the app makes is fetching
 your own public GitHub avatar (`avatars.githubusercontent.com`) to display on
 the card.

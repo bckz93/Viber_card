@@ -29,10 +29,10 @@ export function AllCards({ githubUsername }: { githubUsername: string }) {
           }
 
           return (
-            <div key={rule.archetype} className="flex flex-col gap-3">
+            <div key={rule.archetype} className="flex flex-col gap-3 w-full max-w-sm mx-auto">
               <FUTCard githubUsername={githubUsername} stats={stats} />
               <div
-                className="rounded-xl px-3 py-2.5"
+                className="rounded-xl px-3 py-2.5 text-center"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 <div className="text-xs text-white/60 leading-snug mb-1">{rule.blurb}</div>
