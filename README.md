@@ -34,6 +34,10 @@ Everything runs on your machine. Nothing is uploaded anywhere.
 | Hermes | `~/.hermes/state.db` (SQLite) | Only if the Hermes agent is installed. |
 | Ollama | `~/.ollama/history` | CLI readline history only — no timestamps or assistant replies, so it barely affects time-based stats (NCT/SPD). |
 
+Paths above are shown Unix-style for brevity — under the hood they're
+resolved per-OS (`dirs::home_dir()`), so on Windows this is e.g.
+`C:\Users\<you>\.claude\projects\`, not a literal `~`.
+
 Nothing is scanned outside these four local paths, and no history content
 ever leaves the machine. The only network request the app makes is fetching
 your own public GitHub avatar (`avatars.githubusercontent.com`) to display on
@@ -41,9 +45,14 @@ the card.
 
 ## Getting started
 
-**Prerequisites**: Rust (stable), Node.js 18+, and the [Tauri v2 system
-dependencies](https://v2.tauri.app/start/prerequisites/) for your OS (on
-Linux: `webkit2gtk-4.1`, `libayatana-appindicator3`, etc.).
+**Prerequisites**: Rust (stable), Node.js 18+, and the Tauri v2 system
+dependencies for your OS:
+
+| OS | Install |
+|---|---|
+| **Linux** | `webkit2gtk-4.1`, `libayatana-appindicator3`, and the rest of the [Linux prerequisites](https://v2.tauri.app/start/prerequisites/#linux) (exact package names vary by distro). |
+| **Windows** | [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the "Desktop development with C++" workload, and the MSVC Rust toolchain (`rustup default stable-msvc`). WebView2 is preinstalled on Windows 10 (1803+) and 11 — see the [Windows prerequisites](https://v2.tauri.app/start/prerequisites/#windows) if you need the Evergreen Bootstrapper. |
+| **macOS** | Xcode Command Line Tools (`xcode-select --install`). Requires macOS 10.15 (Catalina) or later. |
 
 ```bash
 npm install
@@ -56,13 +65,22 @@ Build a release binary:
 npm run tauri build
 ```
 
+### Platform support
+
+Developed and tested on **Linux** (Pop!_OS). Windows and macOS *should* work
+— the Rust side only ever resolves paths through `dirs::home_dir()` /
+`dirs::data_dir()` and `PathBuf::join()` (no hardcoded `/` or `~/...`), and
+Tauri v2 itself targets all three natively — but neither has actually been
+built or run there yet. If you try it on Windows or macOS, a bug report (or
+just "it worked!") is very welcome.
+
 ## Project layout
 
 ```
 src-tauri/   Rust backend — scanning, scoring, local persistence
   src/scanner/     one module per data source (all implement HistorySource)
   src/scoring.rs   Interaction[] -> PlayerStats (the 5 stats + archetype)
-  src/snapshot.rs  daily JSONL history (~/.local/share/vibercard/snapshots.jsonl)
+  src/snapshot.rs  daily JSONL history (~/.local/share/vibercard/snapshots.jsonl on Linux, OS equivalent elsewhere)
   src/commands.rs  the Tauri commands the frontend calls
 
 src/         React frontend
